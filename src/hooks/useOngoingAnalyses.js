@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { getOngoingAnalyses } from '../services/api';
 
-const API_URL = import.meta.env.VITE_API_URL;
 const POLL_INTERVAL = 5000; // 5 seconds
 
 export function useOngoingAnalyses() {
@@ -14,14 +13,19 @@ export function useOngoingAnalyses() {
 
     const fetchAnalyses = async () => {
       try {
-        const response = await axios.get(`${API_URL}/analyze/ongoing`);
-        if (mounted) {
-          setAnalyses(response.data);
-          timeoutId = setTimeout(fetchAnalyses, POLL_INTERVAL);
+        const data = await getOngoingAnalyses();
+        if (mounted && Array.isArray(data)) {
+          setAnalyses(data);
+          setError(null);
         }
       } catch (err) {
         if (mounted) {
           setError(err.message);
+          setAnalyses([]); // Clear analyses on error
+        }
+      } finally {
+        if (mounted) {
+          timeoutId = setTimeout(fetchAnalyses, POLL_INTERVAL);
         }
       }
     };
